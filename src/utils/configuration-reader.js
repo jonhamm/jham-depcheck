@@ -19,10 +19,10 @@ function createParsersObject(parsersFromCli) {
   return lodash.isUndefined(parsersFromCli)
     ? undefined
     : lodash(parsersFromCli)
-        .map((keyValuePair) => keyValuePair.split(':'))
-        .fromPairs()
-        .mapValues((value) => value.split('&'))
-        .value();
+      .map((keyValuePair) => keyValuePair.split(':'))
+      .fromPairs()
+      .mapValues((value) => value.split('&'))
+      .value();
 }
 
 export function getCliArgs(args, version) {
@@ -46,6 +46,9 @@ export function getCliArgs(args, version) {
     .describe(
       'ignore-patterns',
       'Comma separated patterns describing files to ignore.',
+    ).describe(
+      'ignore-package-json',
+      'glob pattern to package.json files that should be disregarded',
     )
     .describe('parsers', 'Comma separated glob:parser pair list')
     .describe('detectors', 'Comma separated detector list')
@@ -53,7 +56,7 @@ export function getCliArgs(args, version) {
     .version('version', 'Show version number', version)
     .help('help', 'Show this help message')
     .coerce(
-      ['ignores', 'ignore-dirs', 'ignore-patterns', 'detectors', 'specials'],
+      ['ignores', 'ignore-dirs', 'ignore-patterns', 'ignore-package-json', 'detectors', 'specials'],
       parseCsvArray,
     )
     .coerce('parsers', (parsersStr) => {

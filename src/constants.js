@@ -21,6 +21,7 @@ export const availableSpecials = constructComponent(component, 'special');
 export const defaultOptions = {
   ignoreBinPackage: false,
   ignoreMatches: [],
+  ignorePackageJson: [],
   ignorePatterns: [
     '.git',
     '.svn',

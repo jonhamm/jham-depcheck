@@ -98,6 +98,7 @@ export default function depcheck(rootDir, options, callback) {
   const ignoreMatches = getOption('ignoreMatches');
   const ignorePath = getOption('ignorePath');
   const skipMissing = getOption('skipMissing');
+  const ignorePackageJson = getOption('ignorePackageJson');
 
   // Support for ignoreDirs and ignorePatterns
   // - potential BREAKING CHANGE with previous implementation
@@ -138,10 +139,13 @@ export default function depcheck(rootDir, options, callback) {
   );
 
   const ignorer = getIgnorer({ rootDir, ignorePath, ignorePatterns });
+  const ignorerPackageJson = ignore();
+  ignorerPackageJson.add(ignorePackageJson);
 
   return check({
     rootDir,
     ignorer,
+    ignorerPackageJson,
     skipMissing,
     deps,
     devDeps,

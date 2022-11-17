@@ -93,6 +93,8 @@ All of the arguments are optional:
 
 `--ignore-patterns`: Comma separated patterns describing files to ignore. Patterns must match the .gitignore [spec](http://git-scm.com/docs/gitignore). Example, `--ignore-patterns=build/Release,dist,coverage,*.log`.
 
+`--ignore-package-json`: Comma separated list of ignore glob patterns for directories holding `package.json` files where the directory should be scanned despite the precense of `package.json`. Example `--ignore-package-json:apps/,libs/`
+
 `--help`: Show the help message.
 
 `--parsers`, `--detectors` and `--specials`: These arguments are for advanced usage. They provide an easy way to customize the file parser and dependency detection. Check [the pluggable design document](https://github.com/depcheck/depcheck/blob/master/doc/pluggable-design.md) for more information.
@@ -193,7 +195,9 @@ It figures out:
 - The devDependency `jasmine` is declared in the `package.json` file, but not used by any code.
 - The dependency `lodash` is used somewhere in the code, but not declared in the `package.json` file.
 
-Please note that, if a subfolder has a `package.json` file, it is considered another project and should be checked with another depcheck command.
+Please note that, if a subfolder has a `package.json` file, it is considered another project and should be checked with another depcheck command.   
+If you have an integrated monorepo style repo with buildable non-publishable libraries, you may want to ignore the precense of `package.json` files in libraries and include the library in the depencency check.   
+To achieve this you can specify `--ignore-package-json` option with a list of `glob` patterns of `package.json` files that should not prevent depcheck from scanning the diectory sub-tree below the directory containing the `package.json`  
 
 The following example checks the same project, however, outputs as a JSON blob. Depcheck's JSON output is in one single line for easy pipe and computation. The [`json`](https://www.npmjs.com/package/json) command after the pipe is a node.js program to beautify the output.
 

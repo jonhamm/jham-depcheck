@@ -1,14 +1,14 @@
-import path from 'path';
 import debug from 'debug';
 import isCore from 'is-core-module';
 import lodash from 'lodash';
-import readdirp from 'readdirp';
 import minimatch from 'minimatch';
+import path from 'path';
+import readdirp from 'readdirp';
 import requirePackageName from 'require-package-name';
+import { availableParsers } from './constants';
 import { loadModuleData, readJSON } from './utils';
 import getNodes from './utils/parser';
 import { getAtTypesName } from './utils/typescript';
-import { availableParsers } from './constants';
 
 function isModule(dir) {
   try {
@@ -55,26 +55,26 @@ async function getDependencies(dir, filename, deps, parser, detectors) {
     lodash.isArray(result) && result.every(lodash.isString)
       ? result
       : lodash(getNodes(result))
-          .map((node) => detect(detectors, node, deps))
-          .flatten()
-          .uniq()
-          .map(requirePackageName)
-          .thru((_dependencies) =>
-            parser === availableParsers.typescript
-              ? // If this is a typescript file, importing foo would also use @types/foo, but
-                // only if @types/foo is already a specified dependency.
-                lodash(_dependencies)
-                  .map((dependency) => {
-                    const atTypesName = getAtTypesName(dependency);
-                    return deps.includes(atTypesName)
-                      ? [dependency, atTypesName]
-                      : [dependency];
-                  })
-                  .flatten()
-                  .value()
-              : _dependencies,
-          )
-          .value();
+        .map((node) => detect(detectors, node, deps))
+        .flatten()
+        .uniq()
+        .map(requirePackageName)
+        .thru((_dependencies) =>
+          parser === availableParsers.typescript
+            ? // If this is a typescript file, importing foo would also use @types/foo, but
+            // only if @types/foo is already a specified dependency.
+            lodash(_dependencies)
+              .map((dependency) => {
+                const atTypesName = getAtTypesName(dependency);
+                return deps.includes(atTypesName)
+                  ? [dependency, atTypesName]
+                  : [dependency];
+              })
+              .flatten()
+              .value()
+            : _dependencies,
+        )
+        .value();
 
   const discover = lodash.partial(discoverPropertyDep, dir, deps);
   const discoverPeerDeps = lodash.partial(discover, 'peerDependencies');
@@ -128,7 +128,15 @@ function checkFile(dir, filename, deps, parsers, detectors) {
   );
 }
 
-function checkDirectory(dir, rootDir, ignorer, deps, parsers, detectors) {
+function checkDirectory(
+  dir,
+  rootDir,
+  ignorer,
+  ignorerPackageJson,
+  deps,
+  parsers,
+  detectors,
+) {
   debug('depcheck:checkDirectory')(dir);
 
   return new Promise((resolve) => {
@@ -137,7 +145,8 @@ function checkDirectory(dir, rootDir, ignorer, deps, parsers, detectors) {
     const finder = readdirp(dir, {
       fileFilter: (entry) => !ignorer.ignores(entry.path),
       directoryFilter: (entry) =>
-        !ignorer.ignores(entry.path) && !isModule(entry.fullPath),
+        !ignorer.ignores(entry.path) &&
+        (ignorerPackageJson.ignores(entry.path) || !isModule(entry.fullPath)),
     });
 
     finder.on('data', (entry) => {
@@ -211,17 +220,17 @@ function buildResult(
   const missingDepsLookup = skipMissing
     ? []
     : (() => {
-        const allDeps = deps
-          .concat(devDeps)
-          .concat(peerDeps)
-          .concat(optionalDeps);
+      const allDeps = deps
+        .concat(devDeps)
+        .concat(peerDeps)
+        .concat(optionalDeps);
 
-        const missingDeps = lodash.difference(usingDeps, allDeps);
-        return lodash(missingDeps)
-          .map((missingDep) => [missingDep, usingDepsLookup[missingDep]])
-          .fromPairs()
-          .value();
-      })();
+      const missingDeps = lodash.difference(usingDeps, allDeps);
+      return lodash(missingDeps)
+        .map((missingDep) => [missingDep, usingDepsLookup[missingDep]])
+        .fromPairs()
+        .value();
+    })();
 
   return {
     dependencies: lodash.difference(deps, usingDeps),
@@ -236,6 +245,7 @@ function buildResult(
 export default function check({
   rootDir,
   ignorer,
+  ignorerPackageJson,
   skipMissing,
   deps,
   devDeps,
@@ -249,6 +259,7 @@ export default function check({
     rootDir,
     rootDir,
     ignorer,
+    ignorerPackageJson,
     allDeps,
     parsers,
     detectors,
